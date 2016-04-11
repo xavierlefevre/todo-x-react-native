@@ -3,6 +3,7 @@ import React, {
   Text,
   View,
   StyleSheet,
+  ListView,
   TouchableHighlight,
   ActivityIndicatorIOS
 } from 'react-native';
@@ -13,37 +14,47 @@ var api = require('../utils/api');
 export default class Main extends Component {
   constructor(props) {
     super(props);
+    this.ds = new ListView.DataSource({rowHasChanged: (row1, row2) => row1 !== row2});
     this.state = {
+      dataSource: this.ds.cloneWithRows([]),
       lists: [],
       isLoading: true
     };
   }
   goToList(listid){
+    console.log(listid)
     var list = this.state.lists[listid];
     this.props.navigator.push({
      component: Todos,
      title: `List < ${this.state.lists[listid].title} >`,
      passProps: {list: list}
-   })
+   });
   }
-  render(){
-    var lists = this.state.lists.map((list) => {
-      return (
+  renderRow(rowData){
+    return (
+      <View>
         <TouchableHighlight
-          onPress={() => this.goToList(list.id)}
+          onPress={() => this.goToList(rowData.id)}
           underlayColor="white">
-          <View>
-            <Text style={styles.lists} key={list.id}>
-              <Icon name="ios-book" color="#4F8EF7" size={20}/> {list.title}
+          <View style={styles.rowContainer}>
+            <Text>
+              <Icon style={styles.icon} name="ios-book" color="#4F8EF7" size={20}/>
+              {rowData.title}
             </Text>
-            <View style={styles.separator} />
           </View>
         </TouchableHighlight>
-      );
-    });
+        <View style={styles.separator} />
+      </View>
+    )
+  }
+  render(){
     return(
       <View style={styles.mainContainer}>
-        {lists}
+        <ListView
+          dataSource={this.state.dataSource}
+          renderRow={this.renderRow.bind(this)}
+          enableEmptySections={true}
+        />
         <ActivityIndicatorIOS
           animating={this.state.isLoading}
           color='#111'
@@ -55,8 +66,9 @@ export default class Main extends Component {
   componentDidMount() {
     api.getLists()
       .then((res) => {
-        console.log(res);
+        console.log("ola",res);
         this.setState({
+          dataSource: this.ds.cloneWithRows(res),
           lists: res,
           isLoading: false
         });
@@ -67,18 +79,17 @@ export default class Main extends Component {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    paddingLeft: 20,
-    paddingTop: 20,
-    marginTop: 65,
     flexDirection: 'column',
-    justifyContent: 'flex-start',
     backgroundColor: '#fcfcfc'
   },
-  lists: {
-    margin: 10,
-    fontSize: 15
+  separator: {
+    height: 1,
+    backgroundColor: '#E4E4E4',
+    flex: 1
   },
-  listsText:{
+  rowContainer: {
+    padding: 10,
+    backgroundColor: 'white'
   },
   separator: {
     height: 1,
