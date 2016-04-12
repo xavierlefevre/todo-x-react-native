@@ -17,21 +17,15 @@ var api = {
     })
       .then((res) => res.json());
   },
-  addTodo(listId, todo){
+  updateTodos(listId, todos){
     var url = `https://reacttodox.firebaseio.com/lists/${listId}/todos.json`
     return fetch(url, {
-      method:'post',
-      body: JSON.stringify(todo)
+      method:'put',
+      body: JSON.stringify(todos)
     })
       .then((res) => {
         return res.json();
       });
-  },
-  deleteTodo(listId, todoId){
-    var url = `https://reacttodox.firebaseio.com/lists/${listId}/todos/${todoId}.json`
-    return fetch(url, {
-      method:'delete'
-    })
   }
 };
 
