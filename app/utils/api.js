@@ -24,9 +24,14 @@ var api = {
       body: JSON.stringify(todo)
     })
       .then((res) => {
-        console.log(res);
         return res.json();
       });
+  },
+  deleteTodo(listId, todoId){
+    var url = `https://reacttodox.firebaseio.com/lists/${listId}/todos/${todoId}.json`
+    return fetch(url, {
+      method:'delete'
+    })
   }
 };
 

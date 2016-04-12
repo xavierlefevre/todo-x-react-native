@@ -6,7 +6,7 @@ import React, {
   Text,
   View
 } from 'react-native';
-import Main from './app/components/main';
+import List from './app/components/list';
 
 class ReactTodoX extends Component {
   render() {
@@ -15,8 +15,8 @@ class ReactTodoX extends Component {
         style={styles.mainContainer}
         initialRoute={{
           title: 'TodoX',
-          component: Main,
-          rightButtonTitle: 'Edit'
+          component: List,
+          rightButtonTitle: 'Add List',
         }}
       />
     )
