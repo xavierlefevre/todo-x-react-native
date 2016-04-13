@@ -27,18 +27,16 @@ var _ = require('lodash');
 // Not!! -> Need to find a way to "decouple" the app from an internet connection
 
 export default class Todos extends Component {
+
   constructor(props) {
+
     super(props);
     this.ds = new ListView.DataSource({rowHasChanged: (row1, row2) => row1 !== row2});
     // Firebase keeps "null" values after "delete", this makes sure to remove them
-    if(Array.isArray(this.props.list.todos)){
-      for(i=0;i<this.props.list.todos.length;i++){
-        if (this.props.list.todos[i] == null) {
-          this.props.list.todos.splice(i,1);
-          i--;
-        }
-      }
+    if (Array.isArray(this.props.list.todos)) {
+      _.filter(this.props.list.todos,null)
     }
+
     this.state = {
       // Keeping the todos in the state to be able rebuild the dataSource after modification
       todos: this.props.list.todos || [],
@@ -46,36 +44,50 @@ export default class Todos extends Component {
       todo: {"content":"", "checked":false, "location":{"lat":false,"lng":false}},
       editMode: false
     };
+
   }
-  addTodo(){
-    if(!this.state.todo.id){
-      if(this.state.todos.length>0){
-        this.state.todo.id = this.state.todos[this.state.todos.length-1].id + 1;
-      }else{
-        this.state.todo.id = 1;
-      }
-      this.state.todos.push(this.state.todo);
+
+  persistingNewTodo(){
+
+    if (this.state.todos.length>0) {
+      // Simulate a database ID, this looks for the last element
+      // of the array, and increments its ID by 1 used for the new todo
+      this.state.todo.id = this.state.todos[this.state.todos.length-1].id + 1;
     } else {
-      console.log("todoID 1",this.state.todo.id);
-      console.log("Todos",this.state.todos);
-      var index = _.findIndex(this.state.todos,function(l){
-          return l.id == this.state.todo.id;
-      });
-      this.state.todos[index] = this.state.todo;
+      // If the list has no todo
+      this.state.todo.id = 1;
     }
+    this.state.todos.push(this.state.todo);
     this.reinitStateTodo();
-    this.updateTodos();
+    this.updateTodos(this.props.listId, this.state.todos);
+
   }
+
+  persistingUpdatedTodo(){
+
+    var index = _.findIndex(this.state.todos,function(l){
+        return l.id == this.state.todo.id;
+    });
+    this.state.todos[index] = this.state.todo;
+    this.reinitStateTodo();
+    this.updateTodos(this.props.listId, this.state.todos);
+
+  }
+
   reinitStateTodo(){
+
     this.setState({
       todo: {"content":"", "checked":false, "location":{"lat":false,"lng":false}},
       editMode: false
     });
+
   }
-  updateTodos(){
-    api.updateTodos(this.props.listId, this.state.todos)
+
+  updateTodos(listId, todos){
+    // Persisting the data
+    api.updateTodos(listId, todos)
       .then((data) => {
-        api.getTodos(this.props.listId)
+        api.getTodos(listId)
           .then((data) => {
             this.setState({
               todos: data,
@@ -87,47 +99,54 @@ export default class Todos extends Component {
         console.log('Request Failed', err);
         this.setState({error});
       });
+
   }
+
   handleChange(event){
-    // Handle Immutability ISSUE!
-    var todo = this.state.todo;
+    // Watching the typing changes
+    var todo = _.clone(this.state.todo);
     todo.content = event.nativeEvent.text;
     this.setState({
       todo: todo
     });
+
   }
-  editTodo(todoId){
+
+  editingTodo(todoId){
+    // Setting the edit mode
     var index = _.findIndex(this.state.todos,function(l){
         return l.id == todoId;
     });
-    // Handle Immutability ISSUE!
-    var todo = this.state.todos[index];
+    var todo = _.clone(this.state.todos[index]);
     this.setState({
       todo: todo,
       editMode: true
     });
+
   }
-  deleteTodo(todoId){
+
+  deletingTodo(todoId){
     // Remove the todo from Firebase
     _.remove(this.state.todos,function(l){
         return l.id == todoId;
     });
-    this.updateTodos();
+    this.updateTodos(this.props.listId, this.state.todos);
   }
-  checkTodo(todoId){
+
+  checkingTodo(todoId){
     // Toggle on or off the check button Offline & Online
     var index = _.findIndex(this.state.todos,function(l){
         return l.id == todoId;
     });
-    this.state.todos[index].checked ?
-      this.state.todos[index].checked = false :
-      this.state.todos[index].checked = true;
+    this.state.todos[index].checked = !this.state.todos[index].checked;
     this.setState({
       todos: this.state.todos,
       dataSource: this.ds.cloneWithRows(this.state.todos),
     })
-    this.updateTodos();
+    this.updateTodos(this.props.listId, this.state.todos);
+
   }
+
   renderRow(rowData){
     // Verify the check state of the todo, and update the style accordingly
     var checkStatus = "circle-o";
@@ -138,26 +157,27 @@ export default class Todos extends Component {
         text: 'Edit',
         backgroundColor: 'green',
         underlayColor: 'rgba(0, 0, 0, 1)',
-        onPress: () => { this.editTodo(rowData.id) }
+        onPress: () => { this.editingTodo(rowData.id) }
       },
       {
         text: 'Delete',
         backgroundColor: 'red',
         underlayColor: 'rgba(0, 0, 0, 1)',
-        onPress: () => { this.deleteTodo(rowData.id) }
+        onPress: () => { this.deletingTodo(rowData.id) }
       }
     ];
+
     return (
       <Swipeout right={swipeBtns}
         autoClose='true'>
         <TouchableHighlight
           underlayColor='rgba(192,192,192,1)'
-          onPress={this.checkTodo.bind(this, rowData.id)} >
+          onPress={this.checkingTodo.bind(this, rowData.id)} >
           <View>
             <View style={styles.rowContainer}>
               <Text>
-                <Icon name={checkStatus} color="#4F8EF7" size={20}/>
-                {'  '}{rowData.content}
+                <Icon style={paddingRight} name={checkStatus} color="#4F8EF7" size={20}/>
+                {rowData.content}
               </Text>
             </View>
             <View style={styles.separator} />
@@ -165,40 +185,60 @@ export default class Todos extends Component {
         </TouchableHighlight>
       </Swipeout>
     )
+
   }
+
   footer(){
-    var buttonStyle, textInButton;
+
+    var buttonStyle = styles.buttonAdd,
+        textInButton = "Add",
+        enterTodoNameInput = (
+          <TextInput
+            style={styles.searchInput}
+            value={this.state.todo.content}
+            onChange={this.handleChange.bind(this)}
+            placeholder="New Note"
+          />),
+        addOrUpdateButton =  (
+            <TouchableHighlight
+              style={buttonStyle}
+              onPress={this.persistingNewTodo.bind(this)}
+              underlayColor="#58DDEE">
+              <Text style={styles.buttonText}>{textInButton}</Text>
+            </TouchableHighlight>),
+        deleteButton = (
+          <TouchableHighlight
+            style={styles.buttonCancel}
+            onPress={this.reinitStateTodo.bind(this)}
+            underlayColor="#58DDEE">
+            <Text style={styles.buttonText}>Cancel</Text>
+          </TouchableHighlight>);
+
     if(this.state.editMode){
       buttonStyle = styles.buttonEdit;
       textInButton = "Edit";
-    }else{
-      buttonStyle = styles.buttonAdd;
-      textInButton = "Add";
+      addOrUpdateButton = (
+          <TouchableHighlight
+            style={buttonStyle}
+            onPress={this.persistingUpdatedTodo.bind(this)}
+            underlayColor="#58DDEE">
+            <Text style={styles.buttonText}>{textInButton}</Text>
+          </TouchableHighlight>
+        )
     }
+
     return (
       <View style={styles.footerContainer}>
-        <TextInput
-          style={styles.searchInput}
-          value={this.state.todo.content}
-          onChange={this.handleChange.bind(this)}
-          placeholder="New Note"
-        />
-        <TouchableHighlight
-          style={buttonStyle}
-          onPress={this.addTodo.bind(this)}
-          underlayColor="#58DDEE">
-          <Text style={styles.buttonText}>{textInButton}</Text>
-        </TouchableHighlight>
-        <TouchableHighlight
-          style={styles.buttonCancel}
-          onPress={this.reinitStateTodo.bind(this)}
-          underlayColor="#58DDEE">
-          <Text style={styles.buttonText}>Cancel</Text>
-        </TouchableHighlight>
+        {enterTodoNameInput}
+        {addOrUpdateButton}
+        {deleteButton}
       </View>
     )
+
   }
+
   render(){
+
     return(
       <View style={styles.mainContainer}>
         <ListView
@@ -209,10 +249,13 @@ export default class Todos extends Component {
         {this.footer()}
       </View>
     );
+
   }
+
 };
 
 const styles = StyleSheet.create({
+
   mainContainer: {
     flex: 1,
     flexDirection: 'column',
@@ -263,4 +306,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row'
   }
+
 });
