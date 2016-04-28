@@ -1,0 +1,21 @@
+{
+  "lists": [
+    {"id":0, "title":"Pro", "todos": [
+      {"id":0, "content":"Passer sous le b*re*u", "checked":true,"location":false},
+      {"id":1, "content":"Mais mais mais!", "checked":false,"location":false},
+      {"id":2, "content":"Finir ce putin de raport pour dans 10 ANS!", "checked":true,"location":false}
+      ]
+    },
+    {"id":1, "title":"Personnel", "todos": [
+      {"id":0, "content":"Cadeau Bébé", "checked":true, "location":{"lat":2,"lng":12}},
+      {"id":1, "content":"Payer les impots...", "checked":false, "location":{"lat":6,"lng":16}},
+      {"id":2, "content":"!! Vacances sur Mars !!", "checked":true, "location":{"lat":15,"lng":1}},
+      {"id":3, "content":"Où seulement à Tahiti ??", "checked":true, "location":{"lat":15,"lng":1}},
+      {"id":4, "content":"EMERGENCY!! Ou pas", "checked":false, "location":{"lat":15,"lng":1}}
+      ]
+    },
+    {"id":2, "title":"Random", "todos": [
+      {"id":0, "content":"j'ai oublié...", "checked":false, "location":{"lat":2,"lng":1}}]
+    }
+  ]
+}

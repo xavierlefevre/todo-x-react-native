@@ -22,9 +22,9 @@ var _ = require('lodash');
 // - Allow to check/uncheck each one of them
 // - Adds a new todo if wanted
 //
-// All of this "synchronises" both the todo lists from within the app, but in Firebase as well
+// All of this 'synchronises' both the todo lists from within the app, but in Firebase as well
 // So it requires the app to be connect to the internet to work
-// Not!! -> Need to find a way to "decouple" the app from an internet connection
+// Not!! -> Need to find a way to 'decouple' the app from an internet connection
 
 export default class Todos extends Component {
 
@@ -32,7 +32,7 @@ export default class Todos extends Component {
 
     super(props);
     this.ds = new ListView.DataSource({rowHasChanged: (row1, row2) => row1 !== row2});
-    // Firebase keeps "null" values after "delete", this makes sure to remove them
+    // Firebase keeps 'null' values after 'delete', this makes sure to remove them
     if (Array.isArray(this.props.list.todos)) {
       _.filter(this.props.list.todos,null)
     }
@@ -41,8 +41,9 @@ export default class Todos extends Component {
       // Keeping the todos in the state to be able rebuild the dataSource after modification
       todos: this.props.list.todos || [],
       dataSource: this.ds.cloneWithRows(this.props.list.todos || []),
-      todo: {"content":"", "checked":false, "location":{"lat":false,"lng":false}},
-      editMode: false
+      todo: {'content':'', 'checked':false, 'location':{'lat':false,'lng':false}},
+      editMode: false,
+      addMode: false
     };
 
   }
@@ -65,7 +66,11 @@ export default class Todos extends Component {
 
   persistingUpdatedTodo(){
 
-    var index = _.findIndex(this.state.todos,function(l){
+    console.log(this.state.todo.id);
+    console.log(this.state.todos);
+
+
+    var index = _.findIndex(this.state.todos, function(l){
         return l.id == this.state.todo.id;
     });
     this.state.todos[index] = this.state.todo;
@@ -77,8 +82,9 @@ export default class Todos extends Component {
   reinitStateTodo(){
 
     this.setState({
-      todo: {"content":"", "checked":false, "location":{"lat":false,"lng":false}},
-      editMode: false
+      todo: {'content':'', 'checked':false, 'location':{'lat':false,'lng':false}},
+      editMode: false,
+      addMode: false
     });
 
   }
@@ -107,14 +113,15 @@ export default class Todos extends Component {
     var todo = _.clone(this.state.todo);
     todo.content = event.nativeEvent.text;
     this.setState({
-      todo: todo
+      todo: todo,
+      addMode: true
     });
 
   }
 
   editingTodo(todoId){
     // Setting the edit mode
-    var index = _.findIndex(this.state.todos,function(l){
+    var index = _.findIndex(this.state.todos, function(l){
         return l.id == todoId;
     });
     var todo = _.clone(this.state.todos[index]);
@@ -149,8 +156,8 @@ export default class Todos extends Component {
 
   renderRow(rowData){
     // Verify the check state of the todo, and update the style accordingly
-    var checkStatus = "circle-o";
-    if(rowData.checked) checkStatus = "check-circle-o";
+    var checkStatus = 'circle-o';
+    if(rowData.checked) checkStatus = 'check-circle-o';
     // Swipe buttons for each todos
     let swipeBtns = [
       {
@@ -176,8 +183,8 @@ export default class Todos extends Component {
           <View>
             <View style={styles.rowContainer}>
               <Text>
-                <Icon style={paddingRight} name={checkStatus} color="#4F8EF7" size={20}/>
-                {rowData.content}
+                <Icon name={checkStatus} color='#4F8EF7' size={20}/>
+                {'  '}{rowData.content}
               </Text>
             </View>
             <View style={styles.separator} />
@@ -191,49 +198,59 @@ export default class Todos extends Component {
   footer(){
 
     var buttonStyle = styles.buttonAdd,
-        textInButton = "Add",
+        textInButton = 'Add',
         enterTodoNameInput = (
           <TextInput
             style={styles.searchInput}
             value={this.state.todo.content}
             onChange={this.handleChange.bind(this)}
-            placeholder="New Note"
+            placeholder='New Note'
           />),
         addOrUpdateButton =  (
             <TouchableHighlight
               style={buttonStyle}
               onPress={this.persistingNewTodo.bind(this)}
-              underlayColor="#58DDEE">
+              underlayColor='#58DDEE'>
               <Text style={styles.buttonText}>{textInButton}</Text>
             </TouchableHighlight>),
-        deleteButton = (
+        cancelButton = (
           <TouchableHighlight
             style={styles.buttonCancel}
             onPress={this.reinitStateTodo.bind(this)}
-            underlayColor="#58DDEE">
+            underlayColor='#58DDEE'>
             <Text style={styles.buttonText}>Cancel</Text>
           </TouchableHighlight>);
 
     if(this.state.editMode){
       buttonStyle = styles.buttonEdit;
-      textInButton = "Edit";
+      textInButton = 'Edit';
       addOrUpdateButton = (
           <TouchableHighlight
             style={buttonStyle}
             onPress={this.persistingUpdatedTodo.bind(this)}
-            underlayColor="#58DDEE">
+            underlayColor='#58DDEE'>
             <Text style={styles.buttonText}>{textInButton}</Text>
           </TouchableHighlight>
         )
     }
 
-    return (
-      <View style={styles.footerContainer}>
-        {enterTodoNameInput}
-        {addOrUpdateButton}
-        {deleteButton}
-      </View>
-    )
+    // Display or not the cancel button depending on ongoing action
+    if(this.state.addMode || this.state.editMode){
+      return (
+        <View style={styles.footerContainer}>
+          {enterTodoNameInput}
+          {addOrUpdateButton}
+          {cancelButton}
+        </View>
+      )
+    }else{
+      return (
+        <View style={styles.footerContainer}>
+          {enterTodoNameInput}
+          {addOrUpdateButton}
+        </View>
+      )
+    }
 
   }
 
